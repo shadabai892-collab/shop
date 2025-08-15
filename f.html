@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dry-Fruits Shop Calculator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #8B4513;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .calculator {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #8B4513;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .radio-group {
+            margin-bottom: 15px;
+        }
+        .radio-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .radio-option input {
+            width: auto;
+            margin-right: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        button {
+            background-color: #8B4513;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #A0522D;
+        }
+        .result {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            border-left: 4px solid #8B4513;
+        }
+        .result h3 {
+            margin-top: 0;
+            color: #8B4513;
+        }
+        .records {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .record-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .total {
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #8B4513;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .calculator, .records {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Dry-Fruits Shop Calculator</h1>
+    
+    <div class="calculator">
+        <div class="input-group">
+            <label for="price-per-kg">Price per Kilogram (₹):</label>
+            <input type="number" id="price-per-kg" placeholder="Enter price per kg" min="0" step="0.01">
+        </div>
+        
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="by-weight" name="calculation-type" value="weight" checked>
+                <label for="by-weight">By Weight</label>
+            </div>
+            <div id="weight-section">
+                <div class="input-group">
+                    <div style="display: flex;">
+                        <input type="number" id="weight-value" placeholder="Enter weight" min="0" step="0.01" style="flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                        <select id="weight-unit" style="width: 80px; border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                            <option value="kg">kg</option>
+                            <option value="grams">grams</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="radio-option">
+                <input type="radio" id="by-price" name="calculation-type" value="price">
+                <label for="by-price">By Price</label>
+            </div>
+            <div id="price-section" class="hidden">
+                <div class="input-group">
+                    <input type="number" id="price-value" placeholder="Enter price in rupees" min="0" step="0.01">
+                </div>
+            </div>
+        </div>
+        
+        <button id="calculate-btn">Calculate</button>
+        
+        <div id="result" class="result hidden">
+            <h3>Result</h3>
+            <p id="result-text"></p>
+            <button id="add-to-record">Add to Record</button>
+        </div>
+    </div>
+    
+    <div class="records">
+        <h2>Customer Records</h2>
+        <div id="record-list"></div>
+        <div id="running-total" class="total"></div>
+        <button id="clear-all">Clear All Records</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const pricePerKgInput = document.getElementById('price-per-kg');
+            const byWeightRadio = document.getElementById('by-weight');
+            const byPriceRadio = document.getElementById('by-price');
+            const weightSection = document.getElementById('weight-section');
+            const priceSection = document.getElementById('price-section');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const resultDiv = document.getElementById('result');
+            const resultText = document.getElementById('result-text');
+            const addToRecordBtn = document.getElementById('add-to-record');
+            const recordList = document.getElementById('record-list');
+            const runningTotalDiv = document.getElementById('running-total');
+            const clearAllBtn = document.getElementById('clear-all');
+            
+            let records = [];
+            let runningTotal = 0;
+            
+            // Toggle between weight and price sections
+            byWeightRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    weightSection.classList.remove('hidden');
+                    priceSection.classList.add('hidden');
+                }
+            });
+            
+            byPriceRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    weightSection.classList.add('hidden');
+                    priceSection.classList.remove('hidden');
+                }
+            });
+            
+            // Calculate button click handler
+            calculateBtn.addEventListener('click', function() {
+                const pricePerKg = parseFloat(pricePerKgInput.value);
+                
+                if (isNaN(pricePerKg) || pricePerKg <= 0) {
+                    alert('Please enter a valid price per kilogram');
+                    return;
+                }
+                
+                if (byWeightRadio.checked) {
+                    const weightValue = parseFloat(document.getElementById('weight-value').value);
+                    const weightUnit = document.getElementById('weight-unit').value;
+                    
+                    if (isNaN(weightValue) || weightValue <= 0) {
+                        alert('Please enter a valid weight');
+                        return;
+                    }
+                    
+                    let weightInKg = weightUnit === 'grams' ? weightValue / 1000 : weightValue;
+                    const calculatedPrice = weightInKg * pricePerKg;
+                    
+                    resultText.textContent = `Total Price: ₹${calculatedPrice.toFixed(2)}`;
+                } else {
+                    const priceValue = parseFloat(document.getElementById('price-value').value);
+                    
+                    if (isNaN(priceValue) || priceValue <= 0) {
+                        alert('Please enter a valid price amount');
+                        return;
+                    }
+                    
+                    const grams = (priceValue / pricePerKg) * 1000;
+                    
+                    resultText.textContent = `You will get: ${grams.toFixed(2)} grams`;
+                }
+                
+                resultDiv.classList.remove('hidden');
+            });
+            
+            // Add to record button click handler
+            addToRecordBtn.addEventListener('click', function() {
+                const pricePerKg = parseFloat(pricePerKgInput.value);
+                
+                if (isNaN(pricePerKg) || pricePerKg <= 0) {
+                    alert('Please enter a valid price per kilogram first');
+                    return;
+                }
+                
+                let record = {};
+                let amountToAdd = 0;
+                
+                if (byWeightRadio.checked) {
+                    const weightValue = parseFloat(document.getElementById('weight-value').value);
+                    const weightUnit = document.getElementById('weight-unit').value;
+                    
+                    if (isNaN(weightValue) || weightValue <= 0) {
+                        alert('Please enter a valid weight');
+                        return;
+                    }
+                    
+                    let weightInKg = weightUnit === 'grams' ? weightValue / 1000 : weightValue;
+                    const calculatedPrice = weightInKg * pricePerKg;
+                    amountToAdd = calculatedPrice;
+                    
+                    record = {
+                        type: 'By Weight',
+                        input: `${weightValue} ${weightUnit}`,
+                        result: `₹${calculatedPrice.toFixed(2)}`,
+                        amount: calculatedPrice
+                    };
+                } else {
+                    const priceValue = parseFloat(document.getElementById('price-value').value);
+                    
+                    if (isNaN(priceValue) || priceValue <= 0) {
+                        alert('Please enter a valid price amount');
+                        return;
+                    }
+                    
+                    const grams = (priceValue / pricePerKg) * 1000;
+                    amountToAdd = priceValue;
+                    
+                    record = {
+                        type: 'By Price',
+                        input: `₹${priceValue.toFixed(2)}`,
+                        result: `${grams.toFixed(2)} grams`,
+                        amount: priceValue
+                    };
+                }
+                
+                records.push(record);
+                runningTotal += amountToAdd;
+                
+                updateRecordList();
+                updateRunningTotal();
+            });
+            
+            // Clear all records button click handler
+            clearAllBtn.addEventListener('click', function() {
+                records = [];
+                runningTotal = 0;
+                updateRecordList();
+                updateRunningTotal();
+            });
+            
+            // Update the record list display
+            function updateRecordList() {
+                recordList.innerHTML = '';
+                
+                if (records.length === 0) {
+                    recordList.innerHTML = '<p>No records yet</p>';
+                    return;
+                }
+                
+                records.forEach((record, index) => {
+                    const recordItem = document.createElement('div');
+                    recordItem.className = 'record-item';
+                    recordItem.innerHTML = `
+                        <strong>${index + 1}) ${record.type}:</strong> ${record.input} → ${record.result}
+                    `;
+                    recordList.appendChild(recordItem);
+                });
+            }
+            
+            // Update the running total display
+            function updateRunningTotal() {
+                runningTotalDiv.textContent = `Total Price from all customers: ₹${runningTotal.toFixed(2)}`;
+            }
+            
+            // Initialize the record list
+            updateRecordList();
+            updateRunningTotal();
+        });
+    </script>
+</body>
+</html>
